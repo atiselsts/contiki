@@ -42,12 +42,26 @@
 #define LINK_STATS_ETX_DIVISOR              128
 #endif /* LINK_STATS_CONF_ETX_DIVISOR */
 
+typedef uint8_t link_packet_stat_t;
+
+struct link_packet_stats {
+  /* total attempts to Tx unicast packets */
+  link_packet_stat_t num_packets_tx;
+  /* total ACKs for unicast packets */
+  link_packet_stat_t num_packets_acked;
+  /* total number of unicast and broadcast packets Rx'ed */
+  link_packet_stat_t num_packets_rx;
+};
+
 /* All statistics of a given link */
 struct link_stats {
   uint16_t etx;               /* ETX using ETX_DIVISOR as fixed point divisor */
   int16_t rssi;               /* RSSI (received signal strength) */
   uint8_t freshness;          /* Freshness of the statistics */
   clock_time_t last_tx_time;  /* Last Tx timestamp */
+
+  struct link_packet_stats current; /* updateable packet stats */
+/*  struct link_packet_stats last; */ /* updateable packet stats */
 };
 
 /* Returns the neighbor's link statistics */

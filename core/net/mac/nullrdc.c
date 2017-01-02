@@ -45,6 +45,7 @@
 #include "net/netstack.h"
 #include "net/rime/rimestats.h"
 #include <string.h>
+#include <stdio.h>
 
 #if CONTIKI_TARGET_COOJA || CONTIKI_TARGET_COOJA_IP64
 #include "lib/simEnvChange.h"
@@ -321,6 +322,16 @@ packet_input(void)
       }
     }
 #endif /* NULLRDC_SEND_ACK */
+
+    /* enforce virtual topology on top of a different physical topology */
+    {
+      const linkaddr_t *sender = packetbuf_addr(PACKETBUF_ADDR_SENDER);
+      if(!filter_packet(LOG_ID_FROM_LINKADDR(sender))) {
+        //puts("filter");
+        duplicate = 1;
+      }
+    }
+
     if(!duplicate) {
       NETSTACK_MAC.input();
     }

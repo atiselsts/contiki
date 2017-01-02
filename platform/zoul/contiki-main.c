@@ -88,6 +88,8 @@
 #define PUTS(s)
 #endif
 /*---------------------------------------------------------------------------*/
+uint16_t node_id;
+/*---------------------------------------------------------------------------*/
 /** \brief Board specific iniatialisation */
 void board_init(void);
 /*---------------------------------------------------------------------------*/
@@ -174,6 +176,21 @@ set_rf_params(void)
 
   ieee_addr_cpy_to(ext_addr, 8);
 
+  static const linkaddr_t receiver_addresses[] = {
+    { { 0xc1, 0x0c, 0x0, 0x00, 0x00, 0x00, 0x00, 0x01 } },
+    { { 0xc1, 0x0c, 0x0, 0x00, 0x00, 0x00, 0x00, 0x02 } },
+  };
+
+  if(ext_addr[7] == 0x65 && ext_addr[6] == 0xB3) {
+    node_id = 1;
+  } else if(ext_addr[7] == 0x1A && ext_addr[6] == 0x68) {
+    node_id = 2;
+  }
+  if(node_id != 0) {
+    /* fix the address */
+    memcpy(ext_addr, &receiver_addresses[node_id - 1], sizeof(linkaddr_t));
+  }
+
   short_addr = ext_addr[7];
   short_addr |= ext_addr[6] << 8;
 
@@ -195,6 +212,8 @@ set_rf_params(void)
   NETSTACK_RADIO.set_value(RADIO_PARAM_16BIT_ADDR, short_addr);
   NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, CC2538_RF_CHANNEL);
   NETSTACK_RADIO.set_object(RADIO_PARAM_64BIT_ADDR, ext_addr, 8);
+
+  node_id = linkaddr_node_addr.u8[LINKADDR_SIZE - 1];
 }
 /*---------------------------------------------------------------------------*/
 /**

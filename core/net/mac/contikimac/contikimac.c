@@ -1020,6 +1020,15 @@ input_packet(void)
       }
 #endif /* CONTIKIMAC_SEND_SW_ACK */
 
+      /* enforce virtual topology on top of a different physical topology */
+      {
+        const linkaddr_t *sender = packetbuf_addr(PACKETBUF_ADDR_SENDER);
+        if(!filter_packet(LOG_ID_FROM_LINKADDR(sender))) {
+          //puts("filter");          
+          duplicate = 1;
+        }
+      }
+
       if(!duplicate) {
         NETSTACK_MAC.input();
       }

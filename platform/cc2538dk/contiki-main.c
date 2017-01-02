@@ -85,6 +85,8 @@
 #define PUTS(s)
 #endif
 /*---------------------------------------------------------------------------*/
+uint16_t node_id;
+/*---------------------------------------------------------------------------*/
 static void
 fade(unsigned char l)
 {
@@ -133,6 +135,8 @@ set_rf_params(void)
   NETSTACK_RADIO.set_value(RADIO_PARAM_16BIT_ADDR, short_addr);
   NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, CC2538_RF_CHANNEL);
   NETSTACK_RADIO.set_object(RADIO_PARAM_64BIT_ADDR, ext_addr, 8);
+
+  node_id = linkaddr_node_addr.u8[LINKADDR_SIZE - 1];
 }
 /*---------------------------------------------------------------------------*/
 /**

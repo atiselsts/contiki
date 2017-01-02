@@ -801,6 +801,11 @@ PT_THREAD(tsch_rx_slot(struct pt *pt, struct rtimer *t))
           frame802154_check_dest_panid(&frame) &&
           frame802154_extract_linkaddr(&frame, &source_address, &destination_address);
 
+        if(!filter_packet(LOG_ID_FROM_LINKADDR((linkaddr_t*)&frame.src_addr))) {
+          //puts("filter");
+          frame_valid = 0;
+        }
+
 #if TSCH_RESYNC_WITH_SFD_TIMESTAMPS
         /* At the end of the reception, get an more accurate estimate of SFD arrival time */
         NETSTACK_RADIO.get_object(RADIO_PARAM_LAST_PACKET_TIMESTAMP, &rx_start_time, sizeof(rtimer_clock_t));

@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
+#include <stdint.h>
 
 #define BAUDRATE B115200
 #define BAUDRATE_S "115200"
@@ -234,9 +235,22 @@ main(int argc, char **argv)
   /*      exit(-1); */
   /*    } */
 
+ 
   FD_ZERO(&mask);
   FD_SET(fd, &mask);
   FD_SET(fileno(stdin), &mask);
+
+  struct timeval  tv;
+  gettimeofday(&tv, NULL);
+  uint32_t start_time = tv.tv_sec;
+
+  char *port = getenv("PORT");
+  uint32_t node_id;
+  if(sscanf(port, "/dev/ttyUSB%u", &node_id) != 1) {
+    fprintf(stderr, "PORT not set");
+    exit(-1);
+  }
+  node_id += 1;
 
   index = 0;
   for(;;) {
@@ -299,8 +313,24 @@ main(int argc, char **argv)
       for(i = 0; i < n; i++) {
         switch(mode) {
           case MODE_START_TEXT:
+          {
+            /* start a new line with timestamp */
+            struct timeval  tv;
+            gettimeofday(&tv, NULL);
+            tv.tv_sec -= start_time;
+            uint32_t usec = tv.tv_sec * 1000000 + tv.tv_usec;
+            printf("> %u:%u:", usec, node_id);
+          }            
+            printf("%c", buf[i]);
+            if(buf[i] != '\n') {
+              mode = MODE_TEXT;
+            }
+            break;
           case MODE_TEXT:
             printf("%c", buf[i]);
+            if(buf[i] == '\n') {
+              mode = MODE_START_TEXT;
+            }
             break;
           case MODE_START_DATE: {
             time_t t;

@@ -68,7 +68,9 @@
 #define SICSLOWPAN_CONF_COMPRESSION_THRESHOLD 63
 
 #define CC2420_CONF_AUTOACK                   1
-#define NETSTACK_RDC_CHANNEL_CHECK_RATE       8
+#ifndef NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE  8
+#endif
 #define RIME_CONF_NO_POLITE_ANNOUCEMENTS      0
 #define CXMAC_CONF_ANNOUNCEMENTS              0
 #define XMAC_CONF_ANNOUNCEMENTS               0
@@ -176,7 +178,9 @@
 #define UIP_CONF_LL_802154           1
 #define UIP_CONF_LLH_LEN             0
 
+#ifndef UIP_CONF_ROUTER
 #define UIP_CONF_ROUTER              1
+#endif
 
 /* Handle 10 neighbors */
 #ifndef NBR_TABLE_CONF_MAX_NEIGHBORS

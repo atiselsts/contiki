@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2007, Swedish Institute of Computer Science.
+ * Copyright (c) 2010, Swedish Institute of Computer Science.
+ * Copyright (c) 2016, University of Bristol
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,81 +33,85 @@
 
 /**
  * \file
- *         MAC driver header file
+ *         Powertrace: periodically print out power consumption
  * \author
  *         Adam Dunkels <adam@sics.se>
+ *         Atis Elsts <atis.elsts@bristol.ac.uk>
  */
 
-#ifndef MAC_H_
-#define MAC_H_
+#include "contiki.h"
+#include "contiki-lib.h"
+#include "sys/compower.h"
+#include "powertrace.h"
+#include "net/rime/rime.h"
 
-#include "contiki-conf.h"
-#include "dev/radio.h"
-#include "sys/node-id.h"
+#include <stdio.h>
+#include <string.h>
 
-
-typedef void (* mac_callback_t)(void *ptr, int status, int transmissions);
-
-void mac_call_sent_callback(mac_callback_t sent, void *ptr, int status, int num_tx);
-
-/**
- * The structure of a MAC protocol driver in Contiki.
- */
-struct mac_driver {
-  char *name;
-
-  /** Initialize the MAC driver */
-  void (* init)(void);
-
-  /** Send a packet from the Rime buffer  */
-  void (* send)(mac_callback_t sent_callback, void *ptr);
-
-  /** Callback for getting notified of incoming packet. */
-  void (* input)(void);
-  
-  /** Turn the MAC layer on. */
-  int (* on)(void);
-
-  /** Turn the MAC layer off. */
-  int (* off)(int keep_radio_on);
-
-  /** Returns the channel check interval, expressed in clock_time_t ticks. */
-  unsigned short (* channel_check_interval)(void);
-};
-
-/* Generic MAC return values. */
-enum {
-  /**< The MAC layer transmission was OK. */
-  MAC_TX_OK,
-
-  /**< The MAC layer transmission could not be performed due to a
-     collision. */
-  MAC_TX_COLLISION,
-
-  /**< The MAC layer did not get an acknowledgement for the packet. */
-  MAC_TX_NOACK,
-
-  /**< The MAC layer deferred the transmission for a later time. */
-  MAC_TX_DEFERRED,
-
-  /**< The MAC layer transmission could not be performed because of an
-     error. The upper layer may try again later. */
-  MAC_TX_ERR,
-
-  /**< The MAC layer transmission could not be performed because of a
-     fatal error. The upper layer does not need to try again, as the
-     error will be fatal then as well. */
-  MAC_TX_ERR_FATAL,
-};
-
+PROCESS(powertrace_process, "Periodic power output");
 /*---------------------------------------------------------------------------*/
-#define LOG_ID_FROM_LINKADDR(addr) ((addr) ? (addr)->u8[LINKADDR_SIZE - 1] : 0)
-/*---------------------------------------------------------------------------*/
-static inline uint8_t
-filter_packet(uint16_t remote_id)
+void
+powertrace_print(char *str)
 {
-  return node_id == 1 || remote_id == 1;
+  static unsigned long last_stats[ENERGEST_TYPE_MAX];
+  unsigned long stats[ENERGEST_TYPE_MAX];
+  unsigned long all_stats[ENERGEST_TYPE_MAX];
+  static unsigned long seqno;
+  int i;
+
+  energest_flush();
+
+  for(i = 0; i < ENERGEST_TYPE_MAX; ++i) {
+    all_stats[i] = energest_type_time(i);
+    stats[i] = all_stats[i] - last_stats[i];
+    last_stats[i] = all_stats[i];
+  }
+
+  printf("%s %lu P %d.%d %lu",
+         str, clock_time(), linkaddr_node_addr.u8[0], linkaddr_node_addr.u8[1], seqno);
+
+  for(i = 0; i <= ENERGEST_TYPE_DEEP_LPM; ++i) {
+    printf(" %lu", all_stats[i]);
+  }
+  for(i = 0; i <= ENERGEST_TYPE_DEEP_LPM; ++i) {
+    printf(" %lu", stats[i]);
+  }
+  puts("");
+
+  seqno++;
 }
 /*---------------------------------------------------------------------------*/
+PROCESS_THREAD(powertrace_process, ev, data)
+{
+  static struct etimer periodic;
+  clock_time_t *period;
+  PROCESS_BEGIN();
 
-#endif /* MAC_H_ */
+  period = data;
+
+  if(period == NULL) {
+    PROCESS_EXIT();
+  }
+  etimer_set(&periodic, *period);
+
+  while(1) {
+    PROCESS_WAIT_UNTIL(etimer_expired(&periodic));
+    etimer_reset(&periodic);
+    powertrace_print("");
+  }
+
+  PROCESS_END();
+}
+/*---------------------------------------------------------------------------*/
+void
+powertrace_start(clock_time_t period)
+{
+  process_start(&powertrace_process, (void *)&period);
+}
+/*---------------------------------------------------------------------------*/
+void
+powertrace_stop(void)
+{
+  process_exit(&powertrace_process);
+}
+/*---------------------------------------------------------------------------*/

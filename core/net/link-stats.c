@@ -45,13 +45,18 @@
 #endif
 
 /* Half time for the freshness counter, in minutes */
-#define FRESHNESS_HALF_LIFE             20
+//#define FRESHNESS_HALF_LIFE             20
+#define FRESHNESS_HALF_LIFE             1
 /* Statistics are fresh if the freshness counter is FRESHNESS_TARGET or more */
 #define FRESHNESS_TARGET                 4
 /* Maximum value for the freshness counter */
 #define FRESHNESS_MAX                   16
 /* Statistics with no update in FRESHNESS_EXPIRATION_TIMEOUT is not fresh */
 #define FRESHNESS_EXPIRATION_TIME       (10 * 60 * (clock_time_t)CLOCK_SECOND)
+
+/* In terms of freshness timer intervals. PERIOD = 3: once 1 hour */
+//#define PACKET_STAT_RESET_PERIOD 3
+#define PACKET_STAT_RESET_PERIOD 1
 
 /* EWMA (exponential moving average) used to maintain statistics over time */
 #define EWMA_SCALE            100
@@ -70,6 +75,9 @@ NBR_TABLE(struct link_stats, link_stats);
 
 /* Called every FRESHNESS_HALF_LIFE minutes */
 struct ctimer periodic_timer;
+
+/* Generation counter */
+//static uint32_t packet_stat_generation;
 
 /* Used to initialize ETX before any transmission occurs. In order to
  * infer the initial ETX from the RSSI of previously received packets, use: */
@@ -135,11 +143,6 @@ link_stats_packet_sent(const linkaddr_t *lladdr, int status, int numtx)
   uint16_t packet_etx;
   uint8_t ewma_alpha;
 
-  if(status != MAC_TX_OK && status != MAC_TX_NOACK) {
-    /* Do not penalize the ETX when collisions or transmission errors occur. */
-    return;
-  }
-
   stats = nbr_table_get_from_lladdr(link_stats, lladdr);
   if(stats == NULL) {
     /* Add the neighbor */
@@ -149,6 +152,16 @@ link_stats_packet_sent(const linkaddr_t *lladdr, int status, int numtx)
     } else {
       return; /* No space left, return */
     }
+  }
+
+  stats->current.num_packets_tx += numtx;
+  if(status == MAC_TX_OK) {
+    stats->current.num_packets_acked++;
+  }
+
+  if(status != MAC_TX_OK && status != MAC_TX_NOACK) {
+    /* Do not penalize the ETX when collisions or transmission errors occur. */
+    return;
   }
 
   /* Update last timestamp and freshness */
@@ -187,17 +200,49 @@ link_stats_input_callback(const linkaddr_t *lladdr)
   /* Update RSSI EWMA */
   stats->rssi = ((int32_t)stats->rssi * (EWMA_SCALE - EWMA_ALPHA) +
       (int32_t)packet_rssi * EWMA_ALPHA) / EWMA_SCALE;
+  stats->current.num_packets_rx++;
+}
+/*---------------------------------------------------------------------------*/
+/* Returns the neighbor's address given a link stats item */
+const linkaddr_t *
+link_stats_get_lladdr(const struct link_stats *stat)
+{
+  return nbr_table_get_lladdr(link_stats, stat);
+}
+/*---------------------------------------------------------------------------*/
+static void
+print_stats(const linkaddr_t *addr, struct link_packet_stats *stats)
+{
+  printf("\nLINK STATS to %u: %u %u %u\n",
+      LOG_ID_FROM_LINKADDR(addr),
+      stats->num_packets_tx, stats->num_packets_acked, stats->num_packets_rx);
 }
 /*---------------------------------------------------------------------------*/
 /* Periodic timer called every FRESHNESS_HALF_LIFE minutes */
 static void
 periodic(void *ptr)
 {
+  static int counter;
+  
   /* Age (by halving) freshness counter of all neighbors */
   struct link_stats *stats;
   ctimer_reset(&periodic_timer);
   for(stats = nbr_table_head(link_stats); stats != NULL; stats = nbr_table_next(link_stats, stats)) {
     stats->freshness >>= 1;
+  }
+
+  counter++;
+  if(counter >= PACKET_STAT_RESET_PERIOD) {
+    counter = 0;
+
+    for(stats = nbr_table_head(link_stats); stats != NULL; stats = nbr_table_next(link_stats, stats)) {
+      print_stats(link_stats_get_lladdr(stats), &stats->current);
+    }
+
+    for(stats = nbr_table_head(link_stats); stats != NULL; stats = nbr_table_next(link_stats, stats)) {
+      /* stats->last = stats->current; */
+      memset(&stats->current, 0, sizeof(stats->current));
+    }
   }
 }
 /*---------------------------------------------------------------------------*/
