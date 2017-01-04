@@ -42,7 +42,7 @@
 #define LINK_STATS_ETX_DIVISOR              128
 #endif /* LINK_STATS_CONF_ETX_DIVISOR */
 
-typedef uint8_t link_packet_stat_t;
+typedef uint16_t link_packet_stat_t;
 
 struct link_packet_stats {
   /* total attempts to Tx unicast packets */

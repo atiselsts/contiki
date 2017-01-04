@@ -73,6 +73,8 @@
 #define TSCH_CONF_MAC_MAX_FRAME_RETRIES 8
 #undef CSMA_CONF_MAX_FRAME_RETRIES
 #define CSMA_CONF_MAX_FRAME_RETRIES 8
+#undef TSCH_CONF_MAC_MAX_BE
+#define TSCH_CONF_MAC_MAX_BE 4 /* The default 7, is for much denser networks */
 
 #if USE_TSCH
 /* Netstack layers */
@@ -96,6 +98,9 @@
 #elif USE_NULLRDC
 
 #define NETSTACK_CONF_RDC           nullrdc_driver
+#undef NULLRDC_CONF_802154_AUTOACK
+#define NULLRDC_CONF_802154_AUTOACK       1
+#define NULLRDC_802154_AUTOACK_HW               1
 
 #else
 

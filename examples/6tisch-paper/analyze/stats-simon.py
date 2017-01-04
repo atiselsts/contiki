@@ -75,8 +75,6 @@ TX_LINE = Matcher(r"> ([0-9]+):([0-9]):tx ([0-9]): ([0-9]+)$")
 
 MIN_POWER_SEQNUM = 3
 MIN_LINK_STATS_TIME_SEC = 100
-MIN_PACKET_SEQNUM = 0
-MAX_PACKET_SEQNUM = 0
 
 ################################################
 
@@ -90,28 +88,26 @@ def isReadable(filename):
 
 ##########################################
 def graphLines(data, filenameOut, xtitle, ytitle):
-    print(filenameOut)
-
     pl.figure(figsize=(5, 4))
 
-    if "zoomed" in filenameOut:
-        pl.ylim(0, 2)
-    elif "prr" in filenameOut:
-        pl.ylim(0, 100)
-    elif "duty" in filenameOut:
-        pl.ylim(0, 6)
 
     for i, option in enumerate(OPTIONS):
         optionData = data[i*len(INTERVALS):(i+1)*len(INTERVALS)]
         optionDataMean = [np.mean(x) for x in optionData]
         optionDataStd = [np.std(x) for x in optionData]
-        print(range(len(INTERVALS)))
-        print(optionDataMean)
-        print(optionDataStd)
         pl.errorbar(range(len(INTERVALS)), optionDataMean, yerr=optionDataStd, label=option)
 
+    if "zoomed" in filenameOut:
+        pl.ylim(0, 2)
+    elif "latency" in filenameOut:
+        pl.ylim(ymin = 0)
+    elif "prr" in filenameOut:
+        pl.ylim(0, 100)
+    elif "duty" in filenameOut:
+        pl.ylim(0, 6)
+
 #    pl.xticks(range(-1, len(LABELS)), LABELS + [""], rotation= 45)
-    pl.xticks(range(len(INTERVALS)), INTERVALS, rotation= 90)
+    pl.xticks(range(len(INTERVALS)), np.array(INTERVALS)/1000.)
     pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=2)
 
     lpos = (0.0, 0.0)
@@ -130,11 +126,12 @@ def graphLines(data, filenameOut, xtitle, ytitle):
 ##########################################
 
 def processFiles(filenames):
-    global MIN_PACKET_SEQNUM, MAX_PACKET_SEQNUM
     radioOnTicks = {}
     radioTxTicks = {}
     radioListenTicks = {}
     radioTotalTicks = {}
+    maxSeqnum = {}
+    minSeqnum = {}
     acked = {}
     total = {}
     # (node, seqnum) -> [txTime, rxTime]
@@ -188,8 +185,9 @@ def processFiles(filenames):
                     packets[key] = [ts, None]
                 else:
                     packets[key] = [ts, packets[key][1]]
-                MIN_PACKET_SEQNUM = min(MIN_PACKET_SEQNUM, seqnum)
-                MAX_PACKET_SEQNUM = max(MAX_PACKET_SEQNUM, seqnum)
+                if not node in minSeqnum:
+                    minSeqnum[node] = seqnum
+                maxSeqnum[node] = seqnum
                 continue
 
     result = []
@@ -198,12 +196,13 @@ def processFiles(filenames):
     for i in range(NUM_TX_NODES):
         node = i + 2
         missed = 0
-        for seqnum in range(MIN_PACKET_SEQNUM, MAX_PACKET_SEQNUM + 1):
+        maxSeqnum[node] -= 4 # exclude last 4 packets, which might still be in queue when the xp ends
+        for seqnum in range(minSeqnum[node], maxSeqnum[node] + 1):
             key = (node, seqnum)
-            if key not in packets:
+            if key not in packets or packets[key][1] == None:
                 print("missing packet", key, filename)
                 missed += 1
-        expected = MAX_PACKET_SEQNUM + 1 - MIN_PACKET_SEQNUM
+        expected = maxSeqnum[node] + 1 - minSeqnum[node]
         pdr = 100.0 * (expected - missed) / expected
         pdrs.append(pdr)
     result.append(pdrs)
@@ -220,7 +219,7 @@ def processFiles(filenames):
     latencies = []
     for i in range(NUM_TX_NODES):
         node = i + 2
-        for seqnum in range(MIN_PACKET_SEQNUM, MAX_PACKET_SEQNUM + 1):
+        for seqnum in range(minSeqnum[node], maxSeqnum[node] + 1):
             key = (node, seqnum)
             if key in packets and packets[key][1] is not None:
                 # rx - tx
@@ -378,31 +377,31 @@ def main():
 
     pdr, prr, latency, radioDuty, radioDutyTx, radioDutyListen = extractStats(PATH, isSim = True)
 
-    graphLines(pdr, "cooja_pdr.pdf", "Packet interval, ms", "End-to-end PDR, %")
-    graphLines(prr, "cooja_prr.pdf", "Packet interval, ms", "Link-layer PRR, %")
-    graphLines(latency, "cooja_latency.pdf", "Packet interval, ms", "Latency, sec")
-    graphLines(latency, "cooja_latency_zoomed.pdf", "Packet interval, ms", "Latency, sec")
+    graphLines(pdr, "cooja_pdr.pdf", "Packet interval, sec", "End-to-end PDR, %")
+    graphLines(prr, "cooja_prr.pdf", "Packet interval, sec", "Link-layer PRR, %")
+    graphLines(latency, "cooja_latency.pdf", "Packet interval, sec", "Latency, sec")
+    #graphLines(latency, "cooja_latency_zoomed.pdf", "Packet interval, sec", "Latency, sec")
     # plot only without sink, most often assumed to be mains-powered
-    #graphLines(radioDuty, "cooja_radio_duty.pdf", "Packet interval, ms", "Radio duty cycle, %")
+    #graphLines(radioDuty, "cooja_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
     radioDuty = [x[1:] for x in radioDuty]
-    graphLines(radioDuty, "cooja_radio_duty.pdf", "Packet interval, ms", "Radio duty cycle, %")
+    graphLines(radioDuty, "cooja_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
     #radioDutyTx = [x[1:] for x in radioDutyTx]
-    #graphLines(radioDutyTx, "cooja_radio_duty_tx.pdf", "Packet interval, ms", "Radio duty cycle (Tx), %")
+    #graphLines(radioDutyTx, "cooja_radio_duty_tx.pdf", "Packet interval, sec", "Radio duty cycle (Tx), %")
     #radioDutyListen = [x[1:] for x in radioDutyListen]
-    #graphLines(radioDutyListen, "cooja_radio_duty_listen.pdf", "Packet interval, ms", "Radio duty cycle (Listen), %")
+    #graphLines(radioDutyListen, "cooja_radio_duty_listen.pdf", "Packet interval, sec", "Radio duty cycle (Listen), %")
 
     #NUM_TX_NODES = 1
     #MAX_PACKET_SEQNUM = 60
     #pdr, prr, latency, radioDuty = extractStats(PATH, isSim = False)
 
-    #graphBoxes(pdr, "cc2538_pdr.pdf", "Packet interval, ms", "End-to-end PDR, %")
-    #graphBoxes(prr, "cc2538_prr.pdf", "Packet interval, ms", "Link-layer PRR, %")
-    #graphBoxes(latency, "cc2538_latency.pdf", "Packet interval, ms", "Latency, sec")
-    #graphBoxes(latency, "cc2538_latency_zoomed.pdf", "Packet interval, ms", "Latency, sec")
+    #graphBoxes(pdr, "cc2538_pdr.pdf", "Packet interval, sec", "End-to-end PDR, %")
+    #graphBoxes(prr, "cc2538_prr.pdf", "Packet interval, sec", "Link-layer PRR, %")
+    #graphBoxes(latency, "cc2538_latency.pdf", "Packet interval, sec", "Latency, sec")
+    #graphBoxes(latency, "cc2538_latency_zoomed.pdf", "Packet interval, sec", "Latency, sec")
     #radioDuty = radioDuty[:-1]  # not intereseted in 100%
-    #graphBoxes(radioDuty, "cc2538_radio_duty.pdf", "Packet interval, ms", "Radio duty cycle, %")
+    #graphBoxes(radioDuty, "cc2538_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
     #radioDuty = [x[1:] for x in radioDuty]
-    #graphBoxes(radioDuty, "cc2538_radio_duty_without_sink.pdf", "Packet interval, ms", "Radio duty cycle, %")
+    #graphBoxes(radioDuty, "cc2538_radio_duty_without_sink.pdf", "Packet interval, sec", "Radio duty cycle, %")
 
 
 ###########################################

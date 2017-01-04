@@ -88,7 +88,7 @@ variables = {
     "NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE" : 8,
     "TSCH_SCHEDULE_CONF_DEFAULT_LENGTH" : 8,
     "DEF_LEAVES_COUNT" : 4,
-    "DEF_STARTUP_DELAY" : 5 * 60, # give some time for TSCH to sync and learn drift
+    "DEF_STARTUP_DELAY" : 2 * 60, # give some time for TSCH to sync
 }
 
 def main():
