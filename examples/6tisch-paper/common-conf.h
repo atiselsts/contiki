@@ -68,6 +68,12 @@
 
 //#define USE_NULLRDC 1
 
+/* In all fairness, 8 re-transmissions in all cases */
+#undef TSCH_CONF_MAC_MAX_FRAME_RETRIES
+#define TSCH_CONF_MAC_MAX_FRAME_RETRIES 8
+#undef CSMA_CONF_MAX_FRAME_RETRIES
+#define CSMA_CONF_MAX_FRAME_RETRIES 8
+
 #if USE_TSCH
 /* Netstack layers */
 #undef NETSTACK_CONF_MAC
@@ -178,7 +184,7 @@
 #undef UIP_CONF_TCP
 #define UIP_CONF_TCP 0
 #undef QUEUEBUF_CONF_NUM
-#define QUEUEBUF_CONF_NUM 3
+#define QUEUEBUF_CONF_NUM 10
 #undef RPL_NS_CONF_LINK_NUM
 #define RPL_NS_CONF_LINK_NUM  4
 #undef NBR_TABLE_CONF_MAX_NEIGHBORS

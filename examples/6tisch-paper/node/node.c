@@ -163,7 +163,9 @@ PROCESS_THREAD(node_process, ev, data)
   static struct etimer et;
   static struct etimer packet_timer;
   static uint16_t n;
+#if USE_TSCH_WITH_DEDICATED_SLOTS
   int sf_handle;
+#endif
 
   PROCESS_BEGIN();
 

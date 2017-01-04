@@ -124,7 +124,9 @@ print_stats(void)
 void
 net_init(void)
 {
+#if USE_TSCH_WITH_DEDICATED_SLOTS
   int i, sf_handle;
+#endif
   uip_ipaddr_t ipaddr;
 
   uip_ip6addr(&ipaddr, NETWORK_PREFIX, 0, 0, 0, 0, 0, 0, 0);
@@ -168,8 +170,10 @@ PROCESS_THREAD(receiver_process, ev, data)
   powertrace_start(CLOCK_SECOND * 60);
 #endif
 
+#if USE_TSCH
   /* configure TSCH (if enabled as the MAC protocol) in coordinator mode */
   tsch_set_coordinator(1);
+#endif
 
   simple_udp_register(&unicast_connection, APP_UDP_PORT,
                       NULL, APP_UDP_PORT, receiver);
@@ -179,8 +183,10 @@ PROCESS_THREAD(receiver_process, ev, data)
   /* initial timeout: allow the network to start */
   etimer_set(&et, DEF_STARTUP_DELAY * CLOCK_SECOND);
   PROCESS_WAIT_UNTIL(etimer_expired(&et));
+#if USE_TSCH
   /* Nodes present at startup should have joined. Now send fewer EBs */
   tsch_set_eb_period(TSCH_CONF_MAX_EB_PERIOD);
+#endif
 
   /* Print out stats every minute */
   etimer_set(&et, CLOCK_SECOND * 60);

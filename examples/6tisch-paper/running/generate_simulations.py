@@ -86,7 +86,7 @@ variables = {
     "USE_NULLRDC" : 0,
     "PACKETGEN_PERIOD_MILLISECONDS" : 500,
     "NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE" : 8,
-    "TSCH_SCHEDULE_CONF_DEFAULT_LENGTH" : 7,
+    "TSCH_SCHEDULE_CONF_DEFAULT_LENGTH" : 8,
     "DEF_LEAVES_COUNT" : 4,
     "DEF_STARTUP_DELAY" : 5 * 60, # give some time for TSCH to sync and learn drift
 }
@@ -97,13 +97,11 @@ def main():
     for interval in [250, 500, 1000, 2000, 4000, 8000, 16000]:
         v = copy.copy(variables)
         v["USE_TSCH"] = 1
-        v["TSCH_SCHEDULE_CONF_DEFAULT_LENGTH"] = 13
         v["PACKETGEN_PERIOD_MILLISECONDS"] = interval
         generateOptions(OUT_DIRECTORY, "tsch-minimal-%u"%(interval), v)
 
         v = copy.copy(variables)
         v["USE_TSCH"] = 1
-        v["TSCH_SCHEDULE_CONF_DEFAULT_LENGTH"] = 13
         v["USE_TSCH_WITH_DEDICATED_SLOTS"] = 1
         v["PACKETGEN_PERIOD_MILLISECONDS"] = interval
         generateOptions(OUT_DIRECTORY, "tsch-dedicated-%u"%(interval), v)
