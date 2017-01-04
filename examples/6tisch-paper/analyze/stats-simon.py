@@ -95,7 +95,7 @@ def graphLines(data, filenameOut, xtitle, ytitle):
         optionData = data[i*len(INTERVALS):(i+1)*len(INTERVALS)]
         optionDataMean = [np.mean(x) for x in optionData]
         optionDataStd = [np.std(x) for x in optionData]
-        pl.errorbar(range(len(INTERVALS)), optionDataMean, yerr=optionDataStd, label=option)
+        pl.errorbar(range(len(INTERVALS)), optionDataMean, yerr=optionDataStd, label=LABELS[i])
 
     if "zoomed" in filenameOut:
         pl.ylim(0, 2)
