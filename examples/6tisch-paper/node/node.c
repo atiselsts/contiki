@@ -32,6 +32,7 @@
 #include "net/netstack.h"
 #include "net/ipv6/uip-ds6.h"
 #include "tsch.h"
+#include "tsch-schedule.h"
 #include "simple-udp.h"
 #include "lib/random.h"
 #include "powertrace.h"
@@ -41,7 +42,7 @@
 
 #include <stdio.h>
 /*---------------------------------------------------------------------------*/
-#define PACKETGEN_PERIOD (10 * CLOCK_SECOND)
+#define PACKETGEN_PERIOD ((PACKETGEN_PERIOD_MILLISECONDS * CLOCK_SECOND) / 1000)
 #define PACKET_LENGTH  60
 /*---------------------------------------------------------------------------*/
 
@@ -162,6 +163,7 @@ PROCESS_THREAD(node_process, ev, data)
   static struct etimer et;
   static struct etimer packet_timer;
   static uint16_t n;
+  int sf_handle;
 
   PROCESS_BEGIN();
 
@@ -173,15 +175,30 @@ PROCESS_THREAD(node_process, ev, data)
 #endif
 
   init_net();
-  
+
   /* turn on TSCH */
   NETSTACK_MAC.on();
+
+#if USE_TSCH_WITH_DEDICATED_SLOTS
+  /* First slotframe: send at slot offset == node_id */
+  sf_handle = 0;
+  struct tsch_slotframe *sf_unicast = tsch_schedule_add_slotframe(sf_handle, TSCH_SCHEDULE_CONF_DEFAULT_LENGTH);
+  tsch_schedule_add_link(sf_unicast,
+      LINK_OPTION_TX,
+      LINK_TYPE_NORMAL, &tsch_broadcast_address,
+      node_id, sf_handle);
+  /* Second slotframe: needs only exist at coordinator. We don't listen for EBs after joining.
+     Do nothing here. */
+
+#endif /* USE_TSCH_WITH_DEDICATED_SLOTS */
 
   simple_udp_register(&unicast_connection, APP_UDP_PORT,
       NULL, APP_UDP_PORT, NULL);
 
+  printf("Period: %u %u %u\n", (unsigned)PACKETGEN_PERIOD, (unsigned)CLOCK_SECOND, PACKETGEN_PERIOD_MILLISECONDS);
+
   /* initial timeout: allow the network to start */
-  etimer_set(&et, 30 * CLOCK_SECOND);
+  etimer_set(&et, DEF_STARTUP_DELAY * CLOCK_SECOND);
 
   while(1) {
     PROCESS_YIELD();

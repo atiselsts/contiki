@@ -37,6 +37,7 @@
 #include "sys/node-id.h"
 #include "simple-udp.h"
 #include "tsch.h"
+#include "tsch-schedule.h"
 #include "powertrace.h"
 
 #define DEBUG DEBUG_PRINT
@@ -123,6 +124,7 @@ print_stats(void)
 void
 net_init(void)
 {
+  int i, sf_handle;
   uip_ipaddr_t ipaddr;
 
   uip_ip6addr(&ipaddr, NETWORK_PREFIX, 0, 0, 0, 0, 0, 0, 0);
@@ -130,6 +132,27 @@ net_init(void)
   uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
 
   NETSTACK_MAC.on();
+
+  #if USE_TSCH_WITH_DEDICATED_SLOTS
+    /* First slotframe: only listen slot for each node. Start at node_id == 2, because 1 is the coordinator */
+    sf_handle = 0;
+    struct tsch_slotframe *sf_unicast = tsch_schedule_add_slotframe(sf_handle, TSCH_SCHEDULE_CONF_DEFAULT_LENGTH);
+    for(i = 2; i < 2 + DEF_LEAVES_COUNT; i++) {
+      tsch_schedule_add_link(sf_unicast,
+          LINK_OPTION_RX,
+          LINK_TYPE_NORMAL, &tsch_broadcast_address,
+          i, sf_handle);
+    }
+
+    /* Second slotframe: single Tx slot for EBs, at coordinator only */
+    sf_handle = 1;
+    struct tsch_slotframe *sf_eb = tsch_schedule_add_slotframe(sf_handle, 397);
+    tsch_schedule_add_link(sf_eb,
+        LINK_OPTION_TX,
+        LINK_TYPE_ADVERTISING_ONLY, &tsch_broadcast_address,
+        0, sf_handle);
+
+  #endif /* USE_TSCH_WITH_DEDICATED_SLOTS */
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(receiver_process, ev, data)
@@ -152,6 +175,12 @@ PROCESS_THREAD(receiver_process, ev, data)
                       NULL, APP_UDP_PORT, receiver);
 
   net_init();
+
+  /* initial timeout: allow the network to start */
+  etimer_set(&et, DEF_STARTUP_DELAY * CLOCK_SECOND);
+  PROCESS_WAIT_UNTIL(etimer_expired(&et));
+  /* Nodes present at startup should have joined. Now send fewer EBs */
+  tsch_set_eb_period(TSCH_CONF_MAX_EB_PERIOD);
 
   /* Print out stats every minute */
   etimer_set(&et, CLOCK_SECOND * 60);
