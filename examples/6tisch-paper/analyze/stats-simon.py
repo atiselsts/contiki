@@ -21,7 +21,7 @@ OUT_DIR = "../plots"
 OPTIONS = [
     "tsch-minimal",
     "tsch-dedicated",
-    "contikmac",
+    "contikimac",
     "nullrdc",
 ]
 
@@ -104,7 +104,7 @@ def graphLines(data, filenameOut, xtitle, ytitle):
     elif "prr" in filenameOut:
         pl.ylim(0, 100)
     elif "duty" in filenameOut:
-        pl.ylim(0, 6)
+        pl.ylim(0, 8)
 
 #    pl.xticks(range(-1, len(LABELS)), LABELS + [""], rotation= 45)
     pl.xticks(range(len(INTERVALS)), np.array(INTERVALS)/1000.)
@@ -233,6 +233,8 @@ def processFiles(filenames):
     for i in range(NUM_TX_NODES + 1):
         node = i + 1 # also include the GW
         rdc = 0.0
+        rdcTx = 0.0
+        rdcListen = 0.0
         if node in radioOnTicks:
             rdc = 100.0 * radioOnTicks[node] / radioTotalTicks[node]
             rdcTx = 100.0 * radioTxTicks[node] / radioTotalTicks[node]

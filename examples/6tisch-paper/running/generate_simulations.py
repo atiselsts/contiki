@@ -86,7 +86,7 @@ variables = {
     "USE_NULLRDC" : 0,
     "PACKETGEN_PERIOD_MILLISECONDS" : 500,
     "NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE" : 8,
-    "TSCH_SCHEDULE_CONF_DEFAULT_LENGTH" : 8,
+    "TSCH_SCHEDULE_CONF_DEFAULT_LENGTH" : 9, # use something that is prime to the channel hopping sequence
     "DEF_LEAVES_COUNT" : 4,
     "DEF_STARTUP_DELAY" : 2 * 60, # give some time for TSCH to sync
 }
@@ -109,7 +109,7 @@ def main():
         v = copy.copy(variables)
         v["NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE"] = 8
         v["PACKETGEN_PERIOD_MILLISECONDS"] = interval
-        generateOptions(OUT_DIRECTORY, "contikmac-%u"%(interval), v)
+        generateOptions(OUT_DIRECTORY, "contikimac-%u"%(interval), v)
 
         v = copy.copy(variables)
         v["USE_NULLRDC"] = 1
