@@ -1,0 +1,27 @@
+CONTIKI_PROJECT = node
+all: $(CONTIKI_PROJECT)
+
+#Default to SPHERE SPES-2
+ifeq ($(BOARD),)
+  BOARD=spes-2/cc2650
+endif
+
+DEFINES += DEF_STARTUP_DELAY=20
+
+CONTIKI = ../../..
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+
+CONTIKI_WITH_IPV6 = 1
+
+# don't use RPL
+CONTIKI_WITH_RPL = 0
+
+MAKE_WITH_SECURITY ?= 0 # force Security from command line
+
+#MODULES += core/net/mac/tsch
+
+ifeq ($(MAKE_WITH_SECURITY),1)
+CFLAGS += -DWITH_SECURITY=1
+endif
+
+include $(CONTIKI)/Makefile.include
