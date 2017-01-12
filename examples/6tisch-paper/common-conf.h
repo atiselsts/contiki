@@ -247,6 +247,22 @@
 #undef TSCH_LOG_CONF_LEVEL
 #define TSCH_LOG_CONF_LEVEL 2
 
+#define LOG_ID_FROM_LINKADDR(addr) ((addr)->u8[LINKADDR_SIZE - 1])
+
+/* ---------------------------------------------------------- */
+ 
+#define PROPER_MAC_ADDRS 1
+
+#define IEEE_ADDR_CONF_LOCATION_SECONDARY  sphere_key_addr_info.ieee_address
+
+/* ---------------------------------------------------------- */
+
+/* enable phase lock: XXX broken on CC2538 */
 #define CONTIKIMAC_CONF_WITH_PHASE_OPTIMIZATION 1
+#ifndef __MSP430__
+/* increase the guard time and max strobe time for CC2650 two times */
+#define CONTIKIMAC_CONF_GUARD_TIME 2000
+#define CONTIKIMAC_CONF_MAX_PHASE_STROBE_TIME 2000
+#endif
 
 #endif /* __PROJECT_CONF_H__ */

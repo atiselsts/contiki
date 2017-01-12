@@ -201,10 +201,6 @@
 #endif /* CONTIKI_TARGET_CC2538DK || CONTIKI_TARGET_ZOUL \
        || CONTIKI_TARGET_OPENMOTE_CC2538 */
 
-/* Atis: always disable this, even on Z1 in Cooja */
-// #undef TSCH_CONF_HW_FRAME_FILTERING
-// #define TSCH_CONF_HW_FRAME_FILTERING    0
-
 #if CONTIKI_TARGET_COOJA
 #define COOJA_CONF_SIMULATE_TURNAROUND 0
 #endif /* CONTIKI_TARGET_COOJA */
@@ -231,17 +227,18 @@
 /* An active slot once per second */
 #define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 99
 
-/* enable phase lock */
-#define CONTIKIMAC_CONF_WITH_PHASE_OPTIMIZAION 1
-//#define CONTIKIMAC_CONF_GUARD_TIME 2000 /* 10 * CHECK_TIME + CHECK_TIME_TX */
+/* enable phase lock: XXX broken on CC2538 */
+#define CONTIKIMAC_CONF_WITH_PHASE_OPTIMIZATION 1
+#ifndef __MSP430__
+/* increase the guard time and max strobe time for CC2650 two times */
+#define CONTIKIMAC_CONF_GUARD_TIME 2000
 #define CONTIKIMAC_CONF_MAX_PHASE_STROBE_TIME 2000
+#endif
 
 #if USE_TSCH
 #define STARTUP_DELAY DEF_STARTUP_DELAY
 #else
 #define STARTUP_DELAY DEF_STARTUP_DELAY / 5
 #endif
-
-//#define CONTIKIMAC_CONF_SEND_SW_ACK 1
 
 #endif /* __PROJECT_CONF_H__ */

@@ -10,7 +10,12 @@ DEFINES += DEF_STARTUP_DELAY=@DEF_STARTUP_DELAY@
 CONTIKI_PROJECT = node
 all: $(CONTIKI_PROJECT)
 
-CONTIKI=/home/atis/work/contiki-git
+#Default to SPHERE SPES-2
+ifeq ($(BOARD),)
+  BOARD=spes-2/cc2650
+endif
+
+CONTIKI=/home/atis/sphere/house-sphere/sphere-contiki
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
 CFLAGS += -DUSE_ENERGEST=1 -DENERGEST_CONF_ON=1

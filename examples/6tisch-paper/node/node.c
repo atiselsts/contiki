@@ -36,6 +36,7 @@
 #include "simple-udp.h"
 #include "lib/random.h"
 #include "powertrace.h"
+#include "sys/node-id.h"
 
 #define DEBUG DEBUG_PRINT
 #include "net/ip/uip-debug.h"
@@ -51,20 +52,16 @@ struct simple_udp_connection unicast_connection;
 PROCESS(node_process, "Packet generator");
 AUTOSTART_PROCESSES(&node_process);
 /*---------------------------------------------------------------------------*/
-const linkaddr_t *linkaddr_from_id(uint16_t id)
-{
 #if __MSP430__ /* Simulator */
+const linkaddr_t *address_from_node_id(uint16_t id)
+{
   static const linkaddr_t receiver_addresses[] = {
     { { 0xc1, 0x0c, 0x0, 0x00, 0x00, 0x00, 0x00, 0x01 } }
   };
-#else
-  static const linkaddr_t receiver_addresses[] = {
-    { { 0xc1, 0x0c, 0x0, 0x00, 0x00, 0x00, 0x00, 0x01 } }
-  };
-#endif
 
   return &receiver_addresses[id - 1];
 }
+#endif /* __MSP430__ */
 /*---------------------------------------------------------------------------*/
 static void
 generate_packets(void)
@@ -80,7 +77,7 @@ generate_packets(void)
   memcpy(buf, &seqnum, sizeof(seqnum));
 
   uip_ip6addr(&ipaddr, NETWORK_PREFIX, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-  uip_ds6_set_addr_iid(&ipaddr, (uip_lladdr_t *)linkaddr_from_id(1));
+  uip_ds6_set_addr_iid(&ipaddr, (uip_lladdr_t *)address_from_node_id(1));
   simple_udp_sendto(&unicast_connection, buf, sizeof(buf), &ipaddr);
 }
 /*---------------------------------------------------------------------------*/
@@ -139,11 +136,13 @@ init_net(void)
   const linkaddr_t *lla;
   uip_ds6_nbr_t *nbr;
 
+  frame802154_set_pan_id(IEEE802154_CONF_PANID);
+  
   uip_ip6addr(&ipaddr, NETWORK_PREFIX, 0, 0, 0, 0, 0, 0, 0);
   uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
   uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
 
-  lla = linkaddr_from_id(1);
+  lla = address_from_node_id(1);
   uip_ip6addr(&ipaddr, NETWORK_PREFIX, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
   uip_ds6_set_addr_iid(&ipaddr, (uip_lladdr_t *)lla);
 
@@ -155,7 +154,7 @@ init_net(void)
   // stimer_set(&nbr->reachable, (unsigned long)(0xffffffff / 2));
 
   /* add a route, nexthop through itself */
-  uip_ds6_route_add(&ipaddr, 128, &ipaddr); 
+  uip_ds6_route_add(&ipaddr, 128, &ipaddr);
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(node_process, ev, data)
@@ -176,7 +175,12 @@ PROCESS_THREAD(node_process, ev, data)
   powertrace_start(CLOCK_SECOND * 60);
 #endif
 
-  init_net();
+#if CONTIKI_TARGET_SRF06_CC26XX
+  /* reduce Tx power for on-table tests */
+  NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, -15);
+#endif
+
+  init_net();  
 
   /* turn on TSCH */
   NETSTACK_MAC.on();

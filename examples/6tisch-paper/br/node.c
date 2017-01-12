@@ -129,6 +129,8 @@ net_init(void)
 #endif
   uip_ipaddr_t ipaddr;
 
+  frame802154_set_pan_id(IEEE802154_CONF_PANID);
+
   uip_ip6addr(&ipaddr, NETWORK_PREFIX, 0, 0, 0, 0, 0, 0, 0);
   uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
   uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);
