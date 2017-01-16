@@ -122,6 +122,8 @@ def graphLines(data, filenameOut, xtitle, ytitle):
         pl.ylim(0, 100)
     elif "duty" in filenameOut:
         pl.ylim(0, 15)
+    elif "pdr" in filenameOut:
+        pl.ylim(0, 100)
 
     pl.xticks(range(len(INTERVALS)), np.array(INTERVALS)/1000.)
     pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=2)
@@ -151,9 +153,6 @@ def graphBars(data, filenameOut, xtitle, ytitle):
         optionDataStd = [np.std(x) for x in optionData]
         x = np.linspace(i * width, len(INTERVALS) + i * width, len(INTERVALS))
         print(filenameOut, LABELS[i], optionDataMean)
-        if "duty" in filenameOut and option == "nullrdc":
-            # skip this: always 100%
-            continue
         pl.bar(x, optionDataMean, yerr=optionDataStd, width=width, label=LABELS[i], color=COLORS[i],
         error_kw = dict(ecolor='black', lw=1, capsize=4, capthick=1))
 
@@ -170,7 +169,9 @@ def graphBars(data, filenameOut, xtitle, ytitle):
     elif "prr" in filenameOut:
         pl.ylim(0, 100)
     elif "duty" in filenameOut:
-        pl.ylim(ymin = 0)
+        pl.ylim(0, 16)
+    elif "pdf" in filenameOut:
+        pl.ylim(0, 100)
 
     offset = len(INTERVALS) * width / 2.0
     x = np.linspace(offset, len(INTERVALS) + offset, len(INTERVALS))
