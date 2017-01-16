@@ -107,7 +107,7 @@ main(int argc, char **argv)
   unsigned char mode = MODE_START_TEXT;
   int nfound, flags = 0;
   unsigned char lastc = '\0';
-
+  
   int index = 1;
   while(index < argc) {
     if(argv[index][0] == '-') {
@@ -175,7 +175,8 @@ main(int argc, char **argv)
   }
   fprintf(stderr, "connecting to %s (%s)", device, speedname);
 
-
+  /* disable buffering on stdout */
+  setvbuf(stdout, NULL, _IONBF, 0);
 
 #ifndef O_SYNC
 #define O_SYNC 0
@@ -230,10 +231,10 @@ main(int argc, char **argv)
   }
 
   /* Make read() return immediately */
-  /*    if (fcntl(fd, F_SETFL, FNDELAY) < 0) { */
-  /*      perror("\ncould not set fcntl"); */
-  /*      exit(-1); */
-  /*    } */
+  if (fcntl(fd, F_SETFL, FNDELAY) < 0) {
+    perror("\ncould not set fcntl");
+    exit(-1);
+  }
 
  
   FD_ZERO(&mask);
@@ -244,9 +245,8 @@ main(int argc, char **argv)
   gettimeofday(&tv, NULL);
   uint32_t start_time = tv.tv_sec;
 
-  char *port = getenv("PORT");
   uint32_t node_id;
-  if(sscanf(port, "/dev/ttyUSB%u", &node_id) != 1) {
+  if(sscanf(device, "/dev/ttyUSB%u", &node_id) != 1) {
     fprintf(stderr, "PORT not set");
     exit(-1);
   }
@@ -316,10 +316,11 @@ main(int argc, char **argv)
           {
             /* start a new line with timestamp */
             struct timeval  tv;
+            uint64_t usec;
             gettimeofday(&tv, NULL);
-            tv.tv_sec -= start_time;
-            uint32_t usec = tv.tv_sec * 1000000 + tv.tv_usec;
-            printf("> %u:%u:", usec, node_id);
+            usec = tv.tv_sec * 1000000ull + tv.tv_usec;
+            printf("> %lu:%u:", usec, node_id);
+            fflush(stdout);
           }            
             printf("%c", buf[i]);
             if(buf[i] != '\n') {
