@@ -177,7 +177,7 @@ PROCESS_THREAD(node_process, ev, data)
 
 #if CONTIKI_TARGET_SRF06_CC26XX
   /* reduce Tx power for on-table tests */
-  NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, -15);
+  NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, -5);
 #endif
 
   init_net();  

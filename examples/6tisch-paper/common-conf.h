@@ -238,14 +238,15 @@
 
 #define APP_UDP_PORT 0x6515
 
-#define TSCH_CONF_DEFAULT_HOPPING_SEQUENCE TSCH_HOPPING_SEQUENCE_4_4
+/* #define TSCH_CONF_DEFAULT_HOPPING_SEQUENCE TSCH_HOPPING_SEQUENCE_4_4 */
+#define TSCH_CONF_DEFAULT_HOPPING_SEQUENCE (uint8_t[]){ 25, 26 }
 
 /* ---------------------------------------------------------- */
 
 /* TSCH logging. 0: disabled. 1: basic log. 2: with delayed
  * log messages from interrupt */
 #undef TSCH_LOG_CONF_LEVEL
-#define TSCH_LOG_CONF_LEVEL 2
+#define TSCH_LOG_CONF_LEVEL 0
 
 #define LOG_ID_FROM_LINKADDR(addr) ((addr)->u8[LINKADDR_SIZE - 1])
 
@@ -263,6 +264,7 @@
 /* increase the guard time and max strobe time for CC2650 two times */
 #define CONTIKIMAC_CONF_GUARD_TIME 2000
 #define CONTIKIMAC_CONF_MAX_PHASE_STROBE_TIME 2000
+//#define CONTIKIMAC_CONF_MAX_PHASE_STROBE_TIME 4000
 #endif
 
 #endif /* __PROJECT_CONF_H__ */

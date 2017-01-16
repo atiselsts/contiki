@@ -15,6 +15,9 @@ ifeq ($(BOARD),)
   BOARD=spes-2/cc2650
 endif
 
+# For the paper used:
+#    branch: sphere/house
+#    commit: 875e9e6e12f5ac32b3337fd42e41a3430defb992
 CONTIKI=/home/atis/sphere/house-sphere/sphere-contiki
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 

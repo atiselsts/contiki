@@ -25,13 +25,23 @@ OPTIONS = [
     "nullrdc",
 ]
 
-INTERVALS = [250, 500, 1000, 2000, 4000, 8000, 16000]
+#INTERVALS = [250, 500, 1000, 2000, 4000, 8000, 16000]
+INTERVALS = [250, 1000, 4000, 16000]
+#INTERVALS = [1000]
+#INTERVALS = [4000, 16000]
 
 LABELS = [
     "TSCH minimal",
     "TSCH dedicated",
     "LPL",
     "CSMA"
+]
+
+COLORS = [
+    "#3388cc",
+    "blue",
+    "green",
+    "red"
 ]
 
 SAVE_FILES = 1
@@ -61,7 +71,7 @@ class Matcher:
 ################################################
 
 # cpu listen transmit lpm deep_lpm
-POWER_LINE = Matcher(r".*:([0-9]): [0-9]+ P [0-9]+\.[0-9]+ ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)$")
+POWER_LINE = Matcher(r".*:([0-9]+): [0-9]+ P [0-9]+\.[0-9]+ ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)$")
 POWER_LINE_TESTBED = Matcher(r".* P [0-9]+\.[0-9]+ ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)$")
 
 #> 361237582:2:LINK STATS to 1: 519 336 6
@@ -90,24 +100,81 @@ def isReadable(filename):
 def graphLines(data, filenameOut, xtitle, ytitle):
     pl.figure(figsize=(5, 4))
 
+    for i, option in enumerate(OPTIONS):
+        optionData = data[i*len(INTERVALS):(i+1)*len(INTERVALS)]
+        optionDataMean = [np.mean(x) for x in optionData]
+        optionDataStd = [np.std(x) for x in optionData]
+        print(filenameOut, LABELS[i], optionDataMean)
+        if "duty" in filenameOut and option == "nullrdc":
+            # skip this: always 100%
+            continue
+        pl.errorbar(range(len(INTERVALS)), optionDataMean, yerr=optionDataStd, width=0.3, label=LABELS[i])
+
+    if "zoomed" in filenameOut:
+        pl.ylim(0, 2)
+    elif "latency" in filenameOut:
+        if 0:
+            pl.ylim(ymin = 0)
+        else:
+            pl.yscale("log")
+            pl.ylim(1, 10000)
+    elif "prr" in filenameOut:
+        pl.ylim(0, 100)
+    elif "duty" in filenameOut:
+        pl.ylim(0, 15)
+
+    pl.xticks(range(len(INTERVALS)), np.array(INTERVALS)/1000.)
+    pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=2)
+
+    lpos = (0.0, 0.0)
+
+    pl.grid(True)
+    pl.xlabel(xtitle)
+    pl.ylabel(ytitle)
+
+    if SAVE_FILES:
+        pl.savefig(OUT_DIR + "/" + filenameOut, format='pdf',
+                   bbox_inches='tight')
+    else:
+        pl.show()
+    pl.close()
+
+##########################################
+def graphBars(data, filenameOut, xtitle, ytitle):
+    pl.figure(figsize=(5, 4))
+
+    width = 0.2
 
     for i, option in enumerate(OPTIONS):
         optionData = data[i*len(INTERVALS):(i+1)*len(INTERVALS)]
         optionDataMean = [np.mean(x) for x in optionData]
         optionDataStd = [np.std(x) for x in optionData]
-        pl.errorbar(range(len(INTERVALS)), optionDataMean, yerr=optionDataStd, label=LABELS[i])
+        x = np.linspace(i * width, len(INTERVALS) + i * width, len(INTERVALS))
+        print(filenameOut, LABELS[i], optionDataMean)
+        if "duty" in filenameOut and option == "nullrdc":
+            # skip this: always 100%
+            continue
+        pl.bar(x, optionDataMean, yerr=optionDataStd, width=width, label=LABELS[i], color=COLORS[i],
+        error_kw = dict(ecolor='black', lw=1, capsize=4, capthick=1))
 
     if "zoomed" in filenameOut:
         pl.ylim(0, 2)
     elif "latency" in filenameOut:
-        pl.ylim(ymin = 0)
+        if 0:
+            pl.ylim(ymin = 0)
+        else:
+            pl.yscale("log")
+            pl.ylim(1, 10000)
+            l = [1, 10, 100, 1000, 10000]
+            pl.yticks(l, [str(x) for x in l])
     elif "prr" in filenameOut:
         pl.ylim(0, 100)
     elif "duty" in filenameOut:
-        pl.ylim(0, 8)
+        pl.ylim(ymin = 0)
 
-#    pl.xticks(range(-1, len(LABELS)), LABELS + [""], rotation= 45)
-    pl.xticks(range(len(INTERVALS)), np.array(INTERVALS)/1000.)
+    offset = len(INTERVALS) * width / 2.0
+    x = np.linspace(offset, len(INTERVALS) + offset, len(INTERVALS))
+    pl.xticks(x, ["0.25", "1.0", "4.0", "16.0"])
     pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=2)
 
     lpos = (0.0, 0.0)
@@ -140,18 +207,17 @@ def processFiles(filenames):
     for filename in filenames:
       with open(filename, "r") as f:
         MIN_PACKET_SEQNUM = 2
-        MAX_PACKET_SEQNUM = 0
         for line in f.readlines():
             line = line.strip()
             m = POWER_LINE.match(line)
             if m.matched():
-                node = m.as_int(1)
+                node = m.as_int(1)               
                 seqnum = m.as_int(2)
                 if seqnum >= MIN_POWER_SEQNUM: #  and node != 1:
                     radioOnTicks[node] = radioOnTicks.get(node, 0) + m.as_int(9) + m.as_int(10)
-                    radioTxTicks[node] = radioTxTicks.get(node, 0) + m.as_int(9)
-                    radioListenTicks[node] = radioListenTicks.get(node, 0) + m.as_int(10)
-                    radioTotalTicks[node] = radioTotalTicks.get(node, 0) + m.as_int(7) + m.as_int(8) + m.as_int(11)
+                    radioTxTicks[node] = radioTxTicks.get(node, 0) + m.as_int(10)
+                    radioListenTicks[node] = radioListenTicks.get(node, 0) + m.as_int(9)
+                    radioTotalTicks[node] = radioTotalTicks.get(node, 0) + m.as_int(8) + m.as_int(11) + m.as_int(12)
                 continue
             m = LINK_STATS_LINE.match(line)
             if m.matched():
@@ -159,6 +225,8 @@ def processFiles(filenames):
                 ts = tsToSeconds(m.as_int(1))
                 node = m.as_int(2)
                 if ts >= MIN_LINK_STATS_TIME_SEC and node != 1:
+                    if m.as_int(4) > m.as_int(3):
+                        print("bug!", m.as_int(3), m.as_int(4))
                     total[node] = total.get(node, 0) + m.as_int(3)
                     acked[node] = acked.get(node, 0) + m.as_int(4)
                 continue
@@ -200,7 +268,7 @@ def processFiles(filenames):
         for seqnum in range(minSeqnum[node], maxSeqnum[node] + 1):
             key = (node, seqnum)
             if key not in packets or packets[key][1] == None:
-                print("missing packet", key, filename)
+                print("missing packet", key, os.path.dirname(filename))
                 missed += 1
         expected = maxSeqnum[node] + 1 - minSeqnum[node]
         pdr = 100.0 * (expected - missed) / expected
@@ -224,7 +292,10 @@ def processFiles(filenames):
             if key in packets and packets[key][1] is not None:
                 # rx - tx
                 latency = packets[key][1] - packets[key][0]
-                latencies.append(latency)
+                if latency < 0:
+                    print("bug latency", key, packets[key][1], packets[key][0])
+                else:
+                    latencies.append(1000.0 * latency)
     result.append(latencies)
 
     rdcs = []
@@ -263,86 +334,19 @@ def processDirSim(dirname):
 
 def processDirReal(dirname):
     filenames = []
-    filename = os.path.join(dirname, "br/node1.txt")
+    filename = os.path.join(dirname, "node0.txt")
     if not isReadable(filename):
         print("No BR log file!")
         return None
     filenames.append(filename)
     for i in range(NUM_TX_NODES):
-        node = i + 2
-        filename = os.path.join(dirname, "node/node" + str(node) + ".txt")
+        node = i + 1
+        filename = os.path.join(dirname, "node" + str(node) + ".txt")
         if isReadable(filename):
             filenames.append(filename)
         else:
             print("Node log file does not exist:", filename)
     return processFiles(filenames)
-
-################################################
-
-def extractStatsTestbed(dirname):
-    MIN_PACKETS = 59
-
-    pdr = []
-    per = []
-    duty = []
-
-    print(dirname)
-
-    for n in NODES:
-      node = int(n)
-
-      prrTotal = 0
-      prrAcked = 0
-      radioOnTicks = 0
-      radioTotalTicks = 0
-
-      hasJoinedTsch = True if node == 1 else False
-      hasValidLinkStats = True if node == 1 else False
-
-      filename = os.path.join(dirname, "node" + n + "-log.log--2016-10-25")
-      with open(filename, "rb") as f:
-        for line in f.readlines():
-            line = line.strip()
-            m = POWER_LINE_TESTBED.match(line)
-            if m.matched():
-                seqnum = m.as_int(1)
-                #print("powertrace", node, lastSeqnum)
-                if not hasJoinedTsch:
-                    # not joined yet; ignore the stats in this case
-                    pass
-                elif hasValidLinkStats:
-                    radioOnTicks += m.as_int(8) + m.as_int(9)
-                    radioTotalTicks += m.as_int(7) + m.as_int(10) + m.as_int(11)
-                continue
-            m = LINK_STATS_LINE_TESTBED.match(line)
-            if m.matched():
-                hasValidLinkStats = False
-                # do this only when the network is stable
-                if hasJoinedTsch:
-                    total = m.as_int(1)
-                    acked = m.as_int(2)
-                    if total < MIN_PACKETS:
-                        print("Ignoring link stats: no data connection yet")
-                        pass
-                    elif acked == 0:
-                        print("Bogus link stats: no packets acked")
-                        pass
-                    else:
-                        prrTotal += total
-                        prrAcked += acked
-                        hasValidLinkStats = True
-                continue
-            m = TSCH_JOIN_LINE_TESTBED.match(line)
-            if m.matched():
-                hasJoinedTsch = True
-                continue
-      if node != 1:
-          per.append(100 - (100 * prrAcked / float(prrTotal)))
-      duty.append(100 * radioOnTicks / float(radioTotalTicks))
-
-    print("per=", per, "avg=", 1.0 * sum(per) / len(per))
-    print("duty=", duty, "avg=", 1.0 * sum(duty) / len(duty))
-    return pdr, per, duty
 
 ################################################
 
@@ -372,39 +376,29 @@ def createOutDir(name):
 ################################################
 
 def main():
-    global NUM_TX_NODES
-    global MAX_PACKET_SEQNUM
-
     createOutDir(OUT_DIR)
 
-    pdr, prr, latency, radioDuty, radioDutyTx, radioDutyListen = extractStats(PATH, isSim = True)
+    # simulations
+    if 0:
+        pdr, prr, latency, radioDuty, radioDutyTx, radioDutyListen = extractStats(PATH, isSim = True)
 
-    graphLines(pdr, "cooja_pdr.pdf", "Packet interval, sec", "End-to-end PDR, %")
-    graphLines(prr, "cooja_prr.pdf", "Packet interval, sec", "Link-layer PRR, %")
-    graphLines(latency, "cooja_latency.pdf", "Packet interval, sec", "Latency, sec")
-    #graphLines(latency, "cooja_latency_zoomed.pdf", "Packet interval, sec", "Latency, sec")
-    # plot only without sink, most often assumed to be mains-powered
-    #graphLines(radioDuty, "cooja_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
-    radioDuty = [x[1:] for x in radioDuty]
-    graphLines(radioDuty, "cooja_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
-    #radioDutyTx = [x[1:] for x in radioDutyTx]
-    #graphLines(radioDutyTx, "cooja_radio_duty_tx.pdf", "Packet interval, sec", "Radio duty cycle (Tx), %")
-    #radioDutyListen = [x[1:] for x in radioDutyListen]
-    #graphLines(radioDutyListen, "cooja_radio_duty_listen.pdf", "Packet interval, sec", "Radio duty cycle (Listen), %")
+        graphBars(pdr, "cooja_pdr.pdf", "Packet interval, sec", "End-to-end PDR, %")
+        graphBars(prr, "cooja_prr.pdf", "Packet interval, sec", "Link-layer PRR, %")
+        graphBars(latency, "cooja_latency.pdf", "Packet interval, sec", "Latency, ms")
+        # plot only without sink, most often assumed to be mains-powered
+        radioDuty = [x[1:] for x in radioDuty]
+        graphBars(radioDuty, "cooja_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
+    # real results
+    if 1:
+        pdr, prr, latency, radioDuty, radioDutyTx, radioDutyListen = extractStats(PATH, isSim = False)
 
-    #NUM_TX_NODES = 1
-    #MAX_PACKET_SEQNUM = 60
-    #pdr, prr, latency, radioDuty = extractStats(PATH, isSim = False)
-
-    #graphBoxes(pdr, "cc2538_pdr.pdf", "Packet interval, sec", "End-to-end PDR, %")
-    #graphBoxes(prr, "cc2538_prr.pdf", "Packet interval, sec", "Link-layer PRR, %")
-    #graphBoxes(latency, "cc2538_latency.pdf", "Packet interval, sec", "Latency, sec")
-    #graphBoxes(latency, "cc2538_latency_zoomed.pdf", "Packet interval, sec", "Latency, sec")
-    #radioDuty = radioDuty[:-1]  # not intereseted in 100%
-    #graphBoxes(radioDuty, "cc2538_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
-    #radioDuty = [x[1:] for x in radioDuty]
-    #graphBoxes(radioDuty, "cc2538_radio_duty_without_sink.pdf", "Packet interval, sec", "Radio duty cycle, %")
-
+        graphBars(pdr, "cc2650_pdr.pdf", "Packet interval, sec", "End-to-end PDR, %")
+        graphBars(prr, "cc2650_prr.pdf", "Packet interval, sec", "Link-layer PRR, %")
+        graphBars(latency, "cc2650_latency.pdf", "Packet interval, sec", "Latency, ms")
+        # plot only without sink, most often assumed to be mains-powered
+        radioDuty = [x[1:] for x in radioDuty]
+        graphBars(radioDuty, "cc2650_radio_duty.pdf", "Packet interval, sec", "Radio duty cycle, %")
+        print(radioDuty)
 
 ###########################################
 
