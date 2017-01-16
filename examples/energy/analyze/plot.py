@@ -35,6 +35,8 @@ LABELS = [
 
 SAVE_FILES = 1
 
+SAMPLE_PERIOD_USEC = 43.0 # approximate, empirical
+
 ######################################
 
 def pickAt(d, pos):
@@ -68,15 +70,20 @@ def doFilter(d):
 
 ######################################
 def plotEnergy(data, indexes, filenameOut):
+    pl.figure(figsize=(7, 3.5))
+
     for i in indexes:
         d = doFilter(data[i])
         x = np.linspace(0, len(d) - 1, len(d))
-        pl.plot(x, [x / 1000.0 for x in d], label=LABELS[i])
+        pl.plot([t * SAMPLE_PERIOD_USEC for t in x], [t / 1000.0 for t in d], label=LABELS[i], lw=2)
+        if len(d) < 500:
+            pl.xlim(0, 12000)
+
 
     pl.ylabel("mA")
-    pl.xlabel("Sample")
+    pl.xlabel("Microseconds")
 
-    legend = pl.legend(bbox_to_anchor=(0.0, 1.25), loc='upper left', ncol=1,
+    legend = pl.legend(bbox_to_anchor=(0.5, 1.3), loc='upper center', ncol=1,
                       handler_map={lh.Line2D: lh.HandlerLine2D(numpoints=1)})
 
     if SAVE_FILES:
@@ -106,8 +113,10 @@ def readData(filenames):
 
 def main():
     data = readData(FILENAMES)
-    plotEnergy(data, (0, 1, 4, 5), "energy_tsch.pdf")
-    plotEnergy(data, (2, 3, 6, 7), "energy_contikimac.pdf")
+    plotEnergy(data, (0, 1), "energy_rx_tsch.pdf")
+    plotEnergy(data, (2, 3), "energy_rx_contikimac.pdf")
+    plotEnergy(data, (4, 5), "energy_tx_tsch.pdf")
+    plotEnergy(data, (6, 7), "energy_tx_contikimac.pdf")
 
 ###########################################
 
