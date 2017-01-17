@@ -70,30 +70,38 @@ def doFilter(d):
 
 ######################################
 def plotEnergy(data, indexes, filenameOut):
-    pl.figure(figsize=(7, 3.5))
+    pl.figure(figsize=(8, 3))
 
     for i in indexes:
         d = doFilter(data[i])
         x = np.linspace(0, len(d) - 1, len(d))
-        pl.plot([t * SAMPLE_PERIOD_USEC for t in x], [t / 1000.0 for t in d], label=LABELS[i], lw=2)
+        l = LABELS[i]
+        if "enabled" in l:
+            l = "Security enabled"
+        else:
+            l = "Security disabled"
+        pl.plot([t * SAMPLE_PERIOD_USEC for t in x], [t / 1000.0 for t in d], label=l, lw=2)
         if len(d) < 500:
             pl.xlim(0, 12000)
+        else:
+            tl = [0, 10000, 20000, 30000, 40000]
+            pl.xticks(tl, [str(x) for x in tl])
 
 
     pl.ylabel("mA")
     pl.xlabel("Microseconds")
+    pl.ylim(0, 20)
 
-    legend = pl.legend(bbox_to_anchor=(0.5, 1.3), loc='upper center', ncol=1,
-                      handler_map={lh.Line2D: lh.HandlerLine2D(numpoints=1)})
+    if 0:
+        legend = pl.legend(bbox_to_anchor=(0.5, 1.6), loc='upper center', ncol=2,
+                           handler_map={lh.Line2D: lh.HandlerLine2D(numpoints=1)})
 
     if SAVE_FILES:
         if 0:
             pl.savefig(OUT_DIR + "/" + filenameOut, format='pdf',
-                       bbox_extra_artists=(legend,),
                        bbox_inches='tight')
         else:
             pl.savefig(os.path.join(OUT_DIR, filenameOut), format='pdf',
-                       bbox_extra_artists=(legend,),
                        bbox_inches='tight')
     else:
         pl.show()
