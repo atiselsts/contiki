@@ -25,12 +25,12 @@ FILENAMES = [
 LABELS = [
     "Rx TSCH, security disabled",
     "Rx TSCH, security enabled",
-    "Rx ContikiMAC, security disabled",
-    "Rx ContikiMAC, security enabled",
+    "Rx LPL, security disabled",
+    "Rx LPL, security enabled",
     "Tx TSCH, security disabled",
     "Tx TSCH, security enabled",
-    "Tx ContikiMAC, security disabled",
-    "Tx ContikiMAC, security enabled",
+    "Tx LPL, security disabled",
+    "Tx LPL, security enabled",
 ]
 
 SAVE_FILES = 1
@@ -112,9 +112,11 @@ def plotEnergy(data, indexes, filenameOut):
 
 def readData(filenames):
     result = []
-    for filename in filenames:
+    for i, filename in enumerate(filenames):
         data = np.loadtxt(filename, skiprows=1)
         result.append(data)
+        mc = sum(data) / 1000.0
+        print(LABELS[i] + ":\t" + str(mc) + " mC\t" + str(mc * 3 / 3600.) + " mWh")
     return result
 
 ##########################################
