@@ -27,8 +27,6 @@ OPTIONS = [
 
 #INTERVALS = [250, 500, 1000, 2000, 4000, 8000, 16000]
 INTERVALS = [250, 1000, 4000, 16000]
-#INTERVALS = [1000]
-#INTERVALS = [4000, 16000]
 
 LABELS = [
     "TSCH minimal",
@@ -176,9 +174,7 @@ def graphBars(data, filenameOut, xtitle, ytitle):
     offset = len(INTERVALS) * width / 2.0
     x = np.linspace(offset, len(INTERVALS) + offset, len(INTERVALS))
     pl.xticks(x, ["0.25", "1.0", "4.0", "16.0"])
-    pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=2)
-
-    lpos = (0.0, 0.0)
+    pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=4)
 
     pl.grid(True)
     pl.xlabel(xtitle)
