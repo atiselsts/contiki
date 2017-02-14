@@ -14,8 +14,13 @@ OUT_DIR = "./"
 FILENAMES = [
     "rx-tsch.csv",
     "rx-tsch-sec.csv",
-    "rx-cmac.csv",
-    "rx-cmac-sec.csv",
+    
+    "rx-cmac1.csv",
+    "rx-cmac2.csv",
+    
+    "rx-cmac1-sec.csv",
+    "rx-cmac2-sec.csv",
+    
     "tx-tsch.csv",
     "tx-tsch-sec.csv",
     "tx-cmac.csv",
@@ -26,6 +31,8 @@ LABELS = [
     "Rx TSCH, security disabled",
     "Rx TSCH, security enabled",
     "Rx LPL, security disabled",
+    "Rx LPL, security disabled",
+    "Rx LPL, security enabled",
     "Rx LPL, security enabled",
     "Tx TSCH, security disabled",
     "Tx TSCH, security enabled",
@@ -124,9 +131,10 @@ def readData(filenames):
 def main():
     data = readData(FILENAMES)
     plotEnergy(data, (0, 1), "energy_rx_tsch.pdf")
-    plotEnergy(data, (2, 3), "energy_rx_contikimac.pdf")
-    plotEnergy(data, (4, 5), "energy_tx_tsch.pdf")
-    plotEnergy(data, (6, 7), "energy_tx_contikimac.pdf")
+    plotEnergy(data, (2, 4), "energy_rx_contikimac1.pdf")
+    plotEnergy(data, (3, 5), "energy_rx_contikimac2.pdf")
+#    plotEnergy(data, (4, 5), "energy_tx_tsch.pdf")
+#    plotEnergy(data, (6, 7), "energy_tx_contikimac.pdf")
 
 ###########################################
 
