@@ -141,7 +141,7 @@ def graphLines(data, filenameOut, xtitle, ytitle):
 
 ##########################################
 def graphBars(data, filenameOut, xtitle, ytitle):
-    pl.figure(figsize=(5, 4))
+    pl.figure(figsize=(4, 3))
 
     width = 0.2
 
@@ -174,7 +174,7 @@ def graphBars(data, filenameOut, xtitle, ytitle):
     offset = len(INTERVALS) * width / 2.0
     x = np.linspace(offset, len(INTERVALS) + offset, len(INTERVALS))
     pl.xticks(x, ["0.25", "1.0", "4.0", "16.0"])
-    pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=4)
+#    pl.legend(loc=9, bbox_to_anchor=(0.5, 1.3), ncol=4)
 
     pl.grid(True)
     pl.xlabel(xtitle)

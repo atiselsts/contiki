@@ -23,6 +23,7 @@ FILENAMES = [
     
     "tx-tsch.csv",
     "tx-tsch-sec.csv",
+
     "tx-cmac.csv",
     "tx-cmac-sec.csv",
 ]
@@ -87,20 +88,26 @@ def plotEnergy(data, indexes, filenameOut):
             l = "Security enabled"
         else:
             l = "Security disabled"
-        pl.plot([t * SAMPLE_PERIOD_USEC for t in x], [t / 1000.0 for t in d], label=l, lw=2)
+        pl.plot([t * SAMPLE_PERIOD_USEC / 1000.0 for t in x],
+                [t / 1000.0 for t in d], label=l, lw=2)
         if len(d) < 500:
-            pl.xlim(0, 12000)
+            pl.xlim(0, 12000 // 1000)
         else:
-            tl = [0, 10000, 20000, 30000, 40000]
-            pl.xticks(tl, [str(x) for x in tl])
+            tl = [x // 1000 for x in [0, 10000, 20000, 30000, 40000]]
+            pl.xticks(tl, [str(x) for x in tl], fontsize=15)
 
 
-    pl.ylabel("mA")
-    pl.xlabel("Microseconds")
+    pl.ylabel("mA", fontsize=15)
+    pl.xlabel("ms", fontsize=15)
     pl.ylim(0, 20)
 
+    for tick in pl.gca().xaxis.get_major_ticks():
+        tick.label.set_fontsize(16) 
+    for tick in pl.gca().yaxis.get_major_ticks():
+        tick.label.set_fontsize(16) 
+
     if 0:
-        legend = pl.legend(bbox_to_anchor=(0.5, 1.6), loc='upper center', ncol=2,
+        legend = pl.legend(bbox_to_anchor=(0.5, 1.6), loc='upper center', ncol=2, fontsize=20,
                            handler_map={lh.Line2D: lh.HandlerLine2D(numpoints=1)})
 
     if SAVE_FILES:
@@ -133,8 +140,9 @@ def main():
     plotEnergy(data, (0, 1), "energy_rx_tsch.pdf")
     plotEnergy(data, (2, 4), "energy_rx_contikimac1.pdf")
     plotEnergy(data, (3, 5), "energy_rx_contikimac2.pdf")
-#    plotEnergy(data, (4, 5), "energy_tx_tsch.pdf")
-#    plotEnergy(data, (6, 7), "energy_tx_contikimac.pdf")
+
+    plotEnergy(data, (6, 7), "energy_tx_tsch.pdf")
+    plotEnergy(data, (8, 9), "energy_tx_contikimac.pdf")
 
 ###########################################
 
