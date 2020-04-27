@@ -60,7 +60,7 @@
 #else /* TSCH_LOG_LEVEL */
 #define DEBUG DEBUG_NONE
 #endif /* TSCH_LOG_LEVEL */
-#include "net/ip/uip-debug.h"
+#include "net/net-debug.h"
 
 /* Pre-allocated space for links */
 MEMB(link_memb, struct tsch_link, TSCH_SCHEDULE_MAX_LINKS);
@@ -87,7 +87,7 @@ tsch_schedule_add_slotframe(uint16_t handle, uint16_t size)
     if(sf != NULL) {
       /* Initialize the slotframe */
       sf->handle = handle;
-      ASN_DIVISOR_INIT(sf->size, size);
+      TSCH_ASN_DIVISOR_INIT(sf->size, size);
       LIST_STRUCT_INIT(sf, links_list);
       /* Add the slotframe to the global list */
       list_add(slotframe_list, sf);
@@ -191,6 +191,7 @@ tsch_schedule_add_link(struct tsch_slotframe *slotframe,
       l = memb_alloc(&link_memb);
       if(l == NULL) {
         PRINTF("TSCH-schedule:! add_link memb_alloc failed\n");
+        tsch_release_lock();
       } else {
         static int current_link_handle = 0;
         struct tsch_neighbor *n;
@@ -309,7 +310,7 @@ tsch_schedule_get_link_by_timeslot(struct tsch_slotframe *slotframe, uint16_t ti
 /*---------------------------------------------------------------------------*/
 /* Returns the next active link after a given ASN, and a backup link (for the same ASN, with Rx flag) */
 struct tsch_link *
-tsch_schedule_get_next_active_link(struct asn_t *asn, uint16_t *time_offset,
+tsch_schedule_get_next_active_link(struct tsch_asn_t *asn, uint16_t *time_offset,
     struct tsch_link **backup_link)
 {
   uint16_t time_to_curr_best = 0;
@@ -323,7 +324,7 @@ tsch_schedule_get_next_active_link(struct asn_t *asn, uint16_t *time_offset,
     /* For each slotframe, look for the earliest occurring link */
     while(sf != NULL) {
       /* Get timeslot from ASN, given the slotframe length */
-      uint16_t timeslot = ASN_MOD(*asn, sf->size);
+      uint16_t timeslot = TSCH_ASN_MOD(*asn, sf->size);
       struct tsch_link *l = list_head(sf->links_list);
       while(l != NULL) {
         uint16_t time_to_timeslot =

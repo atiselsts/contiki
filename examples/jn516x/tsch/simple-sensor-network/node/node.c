@@ -152,7 +152,7 @@ PROCESS_THREAD(node_process, ev, data)
 
   /* Set node with ID == 1 as coordinator, handy in Cooja. */
   if(node_id == 1) {
-    if(LLSEC802154_CONF_SECURITY_LEVEL) {
+    if(LLSEC802154_ENABLED) {
       node_role = role_6dr_sec;
     } else {
       node_role = role_6dr;
@@ -165,7 +165,7 @@ PROCESS_THREAD(node_process, ev, data)
       node_role == role_6ln ? "6ln" : (node_role == role_6dr) ? "6dr" : "6dr-sec");
 
 #if WITH_TSCH
-  tsch_set_pan_secured(LLSEC802154_CONF_SECURITY_LEVEL && (node_role == role_6dr_sec));
+  tsch_set_pan_secured(LLSEC802154_ENABLED && (node_role == role_6dr_sec));
 #endif /* WITH_TSCH */
   is_coordinator = node_role > role_6ln;
 
@@ -201,7 +201,7 @@ PROCESS_THREAD(node_process, ev, data)
       if (host_found) {
         /* Make sample count dependent on asn. After a disconnect, waveforms remain
            synchronous. Use node_mac to create phase offset between waveforms in different nodes */
-        sample_count = ((current_asn.ls4b/((1000/(TSCH_CONF_DEFAULT_TIMESLOT_LENGTH/1000)))/INTERVAL)+node_mac[7]) % (SIZE_OF_WAVEFORM-1);
+        sample_count = ((tsch_current_asn.ls4b/((1000/(TSCH_CONF_DEFAULT_TIMESLOT_LENGTH/1000)))/INTERVAL)+node_mac[7]) % (SIZE_OF_WAVEFORM-1);
         printf("%d sec. waveform=%s. cnt=%d. value=%d\n", total_time, waveform_table[selected_waveform].str, sample_count, waveform_table[selected_waveform].table[sample_count]);
         my_sprintf(udp_buf, waveform_table[selected_waveform].table[sample_count]);
         uip_udp_packet_send(udp_conn_tx, udp_buf, strlen(udp_buf));
