@@ -122,6 +122,10 @@ SIM_INTERFACES(&vib_interface, &moteid_interface, &rs232_interface, &simlog_inte
 //SIM_INTERFACE_NAME(dummy_interface);
 //SIM_INTERFACES(..., &dummy_interface);
 
+/* coordinates from Cooja */
+int32_t simPosX = 0;
+int32_t simPosY = 0;
+   
 /* Sensors */
 SENSORS(&button_sensor, &pir_sensor, &vib_sensor);
 

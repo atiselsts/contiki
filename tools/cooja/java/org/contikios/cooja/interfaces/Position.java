@@ -37,6 +37,7 @@ import org.apache.log4j.Logger;
 import org.jdom.Element;
 
 import org.contikios.cooja.*;
+import org.contikios.cooja.mote.memory.VarMemory;
 
 /**
  * Mote 3D position.
@@ -51,6 +52,7 @@ public class Position extends MoteInterface {
   private static Logger logger = Logger.getLogger(Position.class);
   private Mote mote = null;
   private double[] coords = new double[3];
+  private VarMemory myMoteMemory;
 
   /**
    * Creates a position for given mote with coordinates (x=0, y=0, z=0).
@@ -62,6 +64,7 @@ public class Position extends MoteInterface {
    */
   public Position(Mote mote) {
     this.mote = mote;
+    this.myMoteMemory = new VarMemory(mote.getMemory());
 
     coords[0] = 0.0f;
     coords[1] = 0.0f;
@@ -79,6 +82,9 @@ public class Position extends MoteInterface {
     coords[0] = x;
     coords[1] = y;
     coords[2] = z;
+
+    myMoteMemory.setInt32ValueOf("simPosX", (int) x);
+    myMoteMemory.setInt32ValueOf("simPosY", (int) y);
 
     this.setChanged();
     this.notifyObservers(mote);
