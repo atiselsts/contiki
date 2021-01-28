@@ -51,7 +51,9 @@
 #include "net/nbr-table.h"
 #include "net/link-stats.h"
 
-#define DEBUG DEBUG_NONE
+#include <math.h>
+
+#define DEBUG DEBUG_PRINT
 #include "net/ip/uip-debug.h"
 
 /* RFC6551 and RFC6719 do not mandate the use of a specific formula to
@@ -114,9 +116,28 @@ dao_ack_callback(rpl_parent_t *p, int status)
 }
 #endif /* RPL_WITH_DAO_ACK */
 /*---------------------------------------------------------------------------*/
+uint32_t
+get_distance(int32_t x, int32_t y)
+{
+  int64_t dx = x - simPosX;
+  int64_t dy = y - simPosY;
+  uint64_t squared_distance = dx * dx + dy * dy;
+  return (uint32_t) sqrtf((float)squared_distance);
+}
+/*---------------------------------------------------------------------------*/
 static uint16_t
 parent_link_metric(rpl_parent_t *p)
 {
+#if RPL_WITH_MC
+  if(p->dag->instance->mc.type == RPL_DAG_MC_X_POSITION) {
+    uint32_t distance = get_distance(p->mc.obj.position.x, p->mc.obj.position.y);
+    // printf("distance to node ");
+    // uip_debug_ipaddr_print(rpl_get_parent_ipaddr(p));
+    // printf(" is %u\n", distance);
+    return MIN(distance, 0xffff);
+  }
+#endif /* RPL_WITH_MC */
+
   const struct link_stats *stats = rpl_get_parent_link_stats(p);
   if(stats != NULL) {
 #if RPL_MRHOF_SQUARED_ETX
@@ -290,6 +311,12 @@ update_metric_container(rpl_instance_t *instance)
       instance->mc.obj.energy.flags = type << RPL_DAG_MC_ENERGY_TYPE;
       /* Energy_est is only one byte, use the least significant byte of the path metric. */
       instance->mc.obj.energy.energy_est = path_cost >> 8;
+      break;
+    case RPL_DAG_MC_X_POSITION:
+      instance->mc.length = sizeof(instance->mc.obj.position);
+      instance->mc.obj.position.x = simPosX;
+      instance->mc.obj.position.y = simPosY;
+      printf("sending position %d %d\n", simPosX, simPosY);
       break;
     default:
       PRINTF("RPL: MRHOF, non-supported MC %u\n", instance->mc.type);

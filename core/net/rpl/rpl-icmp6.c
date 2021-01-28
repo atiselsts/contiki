@@ -59,7 +59,7 @@
 #include <limits.h>
 #include <string.h>
 
-#define DEBUG DEBUG_NONE
+#define DEBUG DEBUG_PRINT
 
 #include "net/ip/uip-debug.h"
 
@@ -383,6 +383,9 @@ dio_input(void)
         } else if(dio.mc.type == RPL_DAG_MC_ENERGY) {
           dio.mc.obj.energy.flags = buffer[i + 6];
           dio.mc.obj.energy.energy_est = buffer[i + 7];
+        } else if(dio.mc.type == RPL_DAG_MC_X_POSITION) {
+          memcpy(&dio.mc.obj.position.x, &buffer[i + 6], 4);
+          memcpy(&dio.mc.obj.position.y, &buffer[i + 10], 4);
         } else {
           PRINTF("RPL: Unhandled DAG MC type: %u\n", (unsigned)dio.mc.type);
           goto discard;
@@ -531,7 +534,7 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
     instance->of->update_metric_container(instance);
 
     buffer[pos++] = RPL_OPTION_DAG_METRIC_CONTAINER;
-    buffer[pos++] = 6;
+    buffer[pos++] = (instance->mc.type == RPL_DAG_MC_X_POSITION ? 12 : 6);
     buffer[pos++] = instance->mc.type;
     buffer[pos++] = instance->mc.flags >> 1;
     buffer[pos] = (instance->mc.flags & 1) << 7;
@@ -544,6 +547,12 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
       buffer[pos++] = 2;
       buffer[pos++] = instance->mc.obj.energy.flags;
       buffer[pos++] = instance->mc.obj.energy.energy_est;
+    } else if(instance->mc.type == RPL_DAG_MC_X_POSITION) {
+      buffer[pos++] = 8;
+      memcpy(&buffer[pos], &instance->mc.obj.position.x, 4);
+      pos += 4;
+      memcpy(&buffer[pos], &instance->mc.obj.position.y, 4);
+      pos += 4;
     } else {
       PRINTF("RPL: Unable to send DIO because of unhandled DAG MC type %u\n",
              (unsigned)instance->mc.type);

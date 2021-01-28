@@ -60,6 +60,8 @@ typedef uint16_t rpl_ocp_t;
 #define RPL_DAG_MC_ETX                  7 /* Expected Transmission Count */
 #define RPL_DAG_MC_LC                   8 /* Link Color */
 
+#define RPL_DAG_MC_X_POSITION           9 /* Custom MC: position */
+
 /* IANA Routing Metric/Constraint Common Header Flag field as defined in RFC6551 (bit indexes) */
 #define RPL_DAG_MC_FLAG_P               5
 #define RPL_DAG_MC_FLAG_C               6
@@ -91,6 +93,11 @@ struct rpl_metric_object_energy {
   uint8_t energy_est;
 };
 
+struct rpl_metric_object_position {
+  int32_t x;
+  int32_t y;
+};
+
 /* Logical representation of a DAG Metric Container. */
 struct rpl_metric_container {
   uint8_t type;
@@ -100,6 +107,7 @@ struct rpl_metric_container {
   uint8_t length;
   union metric_object {
     struct rpl_metric_object_energy energy;
+    struct rpl_metric_object_position position;
     uint16_t etx;
   } obj;
 };
@@ -335,6 +343,10 @@ enum rpl_mode rpl_get_mode(void);
  * \retval 1 if we have a downward route from RPL Root, 0 if not.
  */
 int rpl_has_downward_route(void);
+
+/* coordinates from Cooja */
+extern int32_t simPosX;
+extern int32_t simPosY;
 
 /*---------------------------------------------------------------------------*/
 #endif /* RPL_H */
