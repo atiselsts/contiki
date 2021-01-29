@@ -96,6 +96,7 @@ struct rpl_metric_object_energy {
 struct rpl_metric_object_position {
   int32_t x;
   int32_t y;
+  uint32_t distance; /* the total path distance to root */
 };
 
 /* Logical representation of a DAG Metric Container. */

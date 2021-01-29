@@ -275,6 +275,7 @@ update_metric_container(rpl_instance_t *instance)
   rpl_dag_t *dag;
   uint16_t path_cost;
   uint8_t type;
+  uint32_t distance_to_root = 0;
 
   dag = instance->current_dag;
   if(dag == NULL || !dag->joined) {
@@ -291,6 +292,13 @@ update_metric_container(rpl_instance_t *instance)
     path_cost = dag->rank;
   } else {
     path_cost = parent_path_cost(dag->preferred_parent);
+    if (instance->mc.type == RPL_DAG_MC_X_POSITION) {
+      rpl_parent_t *p = dag->preferred_parent;
+      if(!(p == NULL || p->dag == NULL || p->dag->instance == NULL)) {
+        distance_to_root = p->mc.obj.position.distance +
+            get_distance(p->mc.obj.position.x, p->mc.obj.position.y);
+      }
+    }
   }
 
   /* Handle the different MC types */
@@ -316,7 +324,8 @@ update_metric_container(rpl_instance_t *instance)
       instance->mc.length = sizeof(instance->mc.obj.position);
       instance->mc.obj.position.x = simPosX;
       instance->mc.obj.position.y = simPosY;
-      printf("sending position %d %d\n", simPosX, simPosY);
+      instance->mc.obj.position.distance = distance_to_root;
+      PRINTF("RPL: My path distance to the root is %u\n",	instance->mc.obj.position.distance);
       break;
     default:
       PRINTF("RPL: MRHOF, non-supported MC %u\n", instance->mc.type);

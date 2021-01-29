@@ -386,6 +386,7 @@ dio_input(void)
         } else if(dio.mc.type == RPL_DAG_MC_X_POSITION) {
           memcpy(&dio.mc.obj.position.x, &buffer[i + 6], 4);
           memcpy(&dio.mc.obj.position.y, &buffer[i + 10], 4);
+          memcpy(&dio.mc.obj.position.distance, &buffer[i + 14], 4);
         } else {
           PRINTF("RPL: Unhandled DAG MC type: %u\n", (unsigned)dio.mc.type);
           goto discard;
@@ -552,6 +553,8 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
       memcpy(&buffer[pos], &instance->mc.obj.position.x, 4);
       pos += 4;
       memcpy(&buffer[pos], &instance->mc.obj.position.y, 4);
+      pos += 4;
+      memcpy(&buffer[pos], &instance->mc.obj.position.distance, 4);
       pos += 4;
     } else {
       PRINTF("RPL: Unable to send DIO because of unhandled DAG MC type %u\n",
