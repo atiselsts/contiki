@@ -73,8 +73,8 @@
     <mote>
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>0.0</x>
-        <y>0.0</y>
+        <x>11.0</x>
+        <y>12.0</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>

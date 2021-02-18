@@ -131,6 +131,10 @@ parent_link_metric(rpl_parent_t *p)
 #if RPL_WITH_MC
   if(p->dag->instance->mc.type == RPL_DAG_MC_X_POSITION) {
     uint32_t distance = get_distance(p->mc.obj.position.x, p->mc.obj.position.y);
+    PRINTF("RPL: parent position: %d %d %u\n",
+        (int)p->mc.obj.position.x,
+        (int)p->mc.obj.position.y,
+        (unsigned)p->mc.obj.position.distance);
     // printf("distance to node ");
     // uip_debug_ipaddr_print(rpl_get_parent_ipaddr(p));
     // printf(" is %u\n", distance);

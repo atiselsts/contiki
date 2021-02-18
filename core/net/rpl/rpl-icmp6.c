@@ -387,6 +387,10 @@ dio_input(void)
           memcpy(&dio.mc.obj.position.x, &buffer[i + 6], 4);
           memcpy(&dio.mc.obj.position.y, &buffer[i + 10], 4);
           memcpy(&dio.mc.obj.position.distance, &buffer[i + 14], 4);
+          PRINTF("RPL: MC type X_POSITION: %d %d %u\n",
+              (int)dio.mc.obj.position.x,
+              (int)dio.mc.obj.position.y,
+              (unsigned)dio.mc.obj.position.distance);
         } else {
           PRINTF("RPL: Unhandled DAG MC type: %u\n", (unsigned)dio.mc.type);
           goto discard;
@@ -535,7 +539,7 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
     instance->of->update_metric_container(instance);
 
     buffer[pos++] = RPL_OPTION_DAG_METRIC_CONTAINER;
-    buffer[pos++] = (instance->mc.type == RPL_DAG_MC_X_POSITION ? 12 : 6);
+    buffer[pos++] = (instance->mc.type == RPL_DAG_MC_X_POSITION ? 16 : 6);
     buffer[pos++] = instance->mc.type;
     buffer[pos++] = instance->mc.flags >> 1;
     buffer[pos] = (instance->mc.flags & 1) << 7;
@@ -549,7 +553,7 @@ dio_output(rpl_instance_t *instance, uip_ipaddr_t *uc_addr)
       buffer[pos++] = instance->mc.obj.energy.flags;
       buffer[pos++] = instance->mc.obj.energy.energy_est;
     } else if(instance->mc.type == RPL_DAG_MC_X_POSITION) {
-      buffer[pos++] = 8;
+      buffer[pos++] = 12;
       memcpy(&buffer[pos], &instance->mc.obj.position.x, 4);
       pos += 4;
       memcpy(&buffer[pos], &instance->mc.obj.position.y, 4);
