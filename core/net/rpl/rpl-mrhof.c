@@ -329,7 +329,7 @@ update_metric_container(rpl_instance_t *instance)
       instance->mc.obj.position.x = simPosX;
       instance->mc.obj.position.y = simPosY;
       instance->mc.obj.position.distance = distance_to_root;
-      PRINTF("RPL: My path distance to the root is %u\n",	instance->mc.obj.position.distance);
+      PRINTF("RPL: My path distance to the root is %u\n",	(unsigned int)instance->mc.obj.position.distance);
       break;
     default:
       PRINTF("RPL: MRHOF, non-supported MC %u\n", instance->mc.type);

@@ -103,7 +103,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
 
   PRINTF("UDP server started. nbr:%d routes:%d\n",
          NBR_TABLE_CONF_MAX_NEIGHBORS, UIP_CONF_MAX_ROUTES);
-  PRINTF("position: %d %d\n", simPosX, simPosY);
+  PRINTF("position: %" PRId32 " %" PRId32 "\n", simPosX, simPosY);
 
 #if UIP_CONF_ROUTER
 /* The choice of server address determines its 6LoWPAN header compression.

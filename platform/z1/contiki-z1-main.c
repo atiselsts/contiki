@@ -96,6 +96,10 @@ static uint8_t is_gateway;
 #define PRINTF(...)
 #endif
 
+/* coordinates from Cooja */
+int32_t simPosX = 0;
+int32_t simPosY = 0;
+
 void init_platform(void);
 /*---------------------------------------------------------------------------*/
 #ifdef UART0_CONF_BAUD_RATE

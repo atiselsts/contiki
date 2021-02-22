@@ -165,8 +165,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   PRINTF("UDP client process started nbr:%d routes:%d\n",
          NBR_TABLE_CONF_MAX_NEIGHBORS, UIP_CONF_MAX_ROUTES);
-
-  PRINTF("position: %d %d\n", simPosX, simPosY);
+  PRINTF("position: %" PRId32 " %" PRId32 "\n", simPosX, simPosY);
 
   print_local_addresses();
 
